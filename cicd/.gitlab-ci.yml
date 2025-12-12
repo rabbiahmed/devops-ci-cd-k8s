@@ -1,0 +1,37 @@
+stages:
+- test
+- build
+- push
+
+variables:
+  IMAGE: "$CI_REGISTRY_IMAGE/devops-demo-app"
+
+test:
+  image: python:3.10
+  stage: test
+  script:
+    - pip install -r src/app/requirements.txt
+    - pytest -q src/app/tests
+
+build:
+  image: docker:24.0.1
+  services:
+    - docker:24-dind
+  stage: build
+  script:
+    - docker build -t $IMAGE:$CI_COMMIT_SHORT_SHA -f docker/Dockerfile .
+    - docker tag $IMAGE:$CI_COMMIT_SHORT_SHA $IMAGE:latest
+  only:
+    - main
+
+push:
+  image: docker:24.0.1
+  services:
+    - docker:24-dind
+  stage: push
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - docker push $IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $IMAGE:latest
+  only:
+    - main
