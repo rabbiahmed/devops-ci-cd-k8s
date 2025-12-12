@@ -12,6 +12,5 @@
     state: started
     restart_policy: always
     published_ports:
-      - "8080:8080"
-  when: (jenkins_info.containers | default([]) | length) == 0
-  ignore_errors: yes
+      - "8090:8080" # Host port 8090 → Container port 8080
+

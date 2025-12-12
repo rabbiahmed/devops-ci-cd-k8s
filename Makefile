@@ -1,50 +1,71 @@
-# ---------------------------------------------
-# Makefile for DevOps CI/CD Scaffold
-# ---------------------------------------------
+# ----------------------------------------------------
+# Makefile for DevOps CI/CD K8s Scaffold
+# ----------------------------------------------------
 
-APP_NAME := demo-app
-IMG := $(APP_NAME):latest
-ANSIBLE_PLAYBOOK := infra/ansible/site.yml
-INVENTORY := infra/ansible/inventory.ini
+# -------- Variables ---------------------------------
+APP_NAME        := demo-app
+IMG             := $(APP_NAME):latest
 
-.PHONY: docker-build docker-run docker-push k8s-apply k8s-delete ansible clean
+ROOT_DIR        := $(CURDIR)
+K8S_DIR         := $(ROOT_DIR)/k8s
+INVENTORY       := infra/ansible/inventory.ini
+PLAYBOOK        := site.yml
 
-# -------------------------------
+# Uncomment and set your real ECR or DockerHub repository
+# REGISTRY       := <your-ecr-or-dockerhub-uri>
+
+# -------- Phony Targets ------------------------------
+.PHONY: docker-build docker-run docker-push \
+        k8s-apply k8s-delete ansible clean
+
+# -----------------------------------------------------
 # Docker tasks
-# -------------------------------
+# -----------------------------------------------------
 
 docker-build:
+	@echo "▶ Building Docker image: $(IMG)"
 	docker build -t $(IMG) .
 
 docker-run:
+	@echo "▶ Running Docker container on port 8000"
 	docker run -p 8000:8000 $(IMG)
 
 docker-push:
-	docker tag $(IMG) <your-ecr-uri>/$(IMG)
-	docker push <your-ecr-uri>/$(IMG)
+ifndef REGISTRY
+	$(error REGISTRY is not set. Edit the Makefile and set REGISTRY=<repo-url>)
+endif
+	@echo "▶ Pushing Docker image to $(REGISTRY)"
+	docker tag $(IMG) $(REGISTRY)/$(IMG)
+	docker push $(REGISTRY)/$(IMG)
 
-# -------------------------------
+# -----------------------------------------------------
 # Kubernetes tasks
-# -------------------------------
+# -----------------------------------------------------
 
 k8s-apply:
-	kubectl apply -f k8s/
+	@echo "▶ Applying Kubernetes manifests from $(K8S_DIR)"
+	kubectl apply -f $(K8S_DIR)
 
 k8s-delete:
-	kubectl delete -f k8s/
+	@echo "▶ Deleting Kubernetes resources from $(K8S_DIR)"
+	kubectl delete -f $(K8S_DIR)
 
-# -------------------------------
+# -----------------------------------------------------
 # Ansible tasks
-# -------------------------------
+# -----------------------------------------------------
 
 ansible:
-	ansible-playbook -i $(INVENTORY) $(ANSIBLE_PLAYBOOK) --ask-become-pass
+	@echo "▶ Running Ansible playbook: $(PLAYBOOK)"
+	ansible-playbook -i $(INVENTORY) $(PLAYBOOK) --ask-become-pass
 
-# -------------------------------
-# Clean environment (optional)
-# -------------------------------
+# -----------------------------------------------------
+# Cleanup tasks
+# -----------------------------------------------------
 
 clean:
-	docker rm -f jenkins || true
-	docker rmi -f $(IMG) || true
-	k3d cluster delete dev-cluster || true
+	@echo "▶ Cleaning Docker, Jenkins and k3d resources"
+	-docker rm -f jenkins 2>/dev/null || true
+	-docker rmi -f $(IMG) 2>/dev/null || true
+	-k3d cluster delete dev-cluster 2>/dev/null || true
+
+	@echo "✔ Cleanup complete"
