@@ -29,11 +29,10 @@ cd devops-ci-cd-k8s
 
 ### 2. Run the full DevOps environment
 
-This will provision Jenkins, k3s/k3d, and deploy the demo app.
-
 ```bash
 make ansible
 ```
+This will provision Jenkins, k3s/k3d, and deploy the demo app.
 
 ### 3. Docker Tasks
 
