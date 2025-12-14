@@ -58,6 +58,10 @@ kubectl port-forward svc/demo-app 8000:8000 -n default
 ```
 Then access the app: http://localhost:8000
 
+{
+  "message": "Hello from DevOps demo"
+}
+
 ### 5. Clean Environment
 
 ```bash
